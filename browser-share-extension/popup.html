@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Browser Share</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="var(--accent-solid)"/>
+        <rect x="5.5" y="6.5" width="16" height="13" rx="2.6" fill="#fff" opacity=".38"/>
+        <rect x="10.5" y="12.5" width="16.5" height="13.5" rx="2.6" fill="#fff"/>
+        <rect x="10.5" y="12.5" width="16.5" height="4.4" rx="2.6" fill="#E2E5FF"/>
+        <rect x="10.5" y="14.6" width="16.5" height="2.3" fill="#E2E5FF"/>
+        <circle cx="13.6" cy="14.7" r="1.15" fill="#FF5B4A"/>
+      </svg>
+      <span class="wordmark">Browser Share</span>
+    </div>
+    <div class="pill" id="pill" data-state="idle"><i></i><span id="pillText">Not sharing</span></div>
+  </header>
+
+  <main>
+    <!-- IDLE -->
+    <section id="viewIdle" class="view">
+      <h1>Share this browser</h1>
+      <p class="lede">Get a short code, send it to a friend, and they can browse your bookmarks and tabs, or watch and drive a tab live.</p>
+      <button class="btn primary big" id="btnStart">Start sharing</button>
+    </section>
+
+    <!-- STARTING / ERROR -->
+    <section id="viewStarting" class="view" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="lede center">Opening your room…</p>
+    </section>
+
+    <section id="viewError" class="view" hidden>
+      <h1>Couldn't open a room</h1>
+      <p class="lede" id="errorText"></p>
+      <button class="btn primary big" id="btnRetry">Try again</button>
+    </section>
+
+    <!-- SHARING -->
+    <section id="viewSharing" class="view" hidden>
+      <div class="codeCard">
+        <div class="codeLabel">Room code</div>
+        <div class="tiles" id="tiles" aria-label="Room code"></div>
+        <div class="codeActions">
+          <button class="btn soft" id="btnCopyCode"><svg viewBox="0 0 24 24"><use href="#i-copy"/></svg><span>Copy code</span></button>
+          <button class="btn soft" id="btnCopyLink"><svg viewBox="0 0 24 24"><use href="#i-link"/></svg><span>Copy invite link</span></button>
+        </div>
+        <p class="hint" id="linkHint" hidden>Add your Guest page address under Settings to copy a one-click invite link.</p>
+      </div>
+
+      <div class="viewers" id="viewers">
+        <div class="avatars" id="avatars"></div>
+        <div class="viewersText" id="viewersText">Waiting for your friend to join</div>
+      </div>
+
+      <div class="liveCard" id="liveCard" hidden>
+        <div class="liveHead">
+          <span class="liveDot"></span>
+          <div class="liveMeta">
+            <div class="liveTitle" id="liveTitle">Sharing a tab</div>
+            <div class="liveUrl" id="liveUrl"></div>
+          </div>
+        </div>
+        <button class="btn ghost small" id="btnRetarget">Share this tab instead</button>
+      </div>
+    </section>
+
+    <!-- TOGGLES (always visible) -->
+    <section class="group">
+      <div class="groupTitle">What your friend can use</div>
+      <label class="row">
+        <span class="ico"><svg viewBox="0 0 24 24"><use href="#i-bookmark"/></svg></span>
+        <span class="rowText"><b>Bookmarks</b><small>Your full bookmark tree</small></span>
+        <span class="switch"><input type="checkbox" id="tgBookmarks"><span></span></span>
+      </label>
+      <label class="row">
+        <span class="ico"><svg viewBox="0 0 24 24"><use href="#i-tabs"/></svg></span>
+        <span class="rowText"><b>Open tabs</b><small>Titles and links, updated live</small></span>
+        <span class="switch"><input type="checkbox" id="tgTabs"><span></span></span>
+      </label>
+      <label class="row">
+        <span class="ico"><svg viewBox="0 0 24 24"><use href="#i-video"/></svg></span>
+        <span class="rowText"><b>Live tab view</b><small>Picture and sound of the tab you're on</small></span>
+        <span class="switch"><input type="checkbox" id="tgLive"><span></span></span>
+      </label>
+      <label class="row" id="rowControl">
+        <span class="ico"><svg viewBox="0 0 24 24"><use href="#i-pointer"/></svg></span>
+        <span class="rowText"><b>Remote control</b><small>Let them click and type in that tab</small></span>
+        <span class="switch"><input type="checkbox" id="tgControl"><span></span></span>
+      </label>
+      <p class="note" id="controlNote" hidden>While someone is in control, Chrome shows a “started debugging this browser” bar. That's normal.</p>
+    </section>
+
+    <div class="actions" id="stopWrap" hidden>
+      <button class="btn danger big" id="btnStop">Stop sharing</button>
+    </div>
+  </main>
+
+  <footer>
+    <button class="linkbtn" id="btnSettings" aria-expanded="false">Settings</button>
+    <div class="settings" id="settings" hidden>
+      <label for="guestUrl">Guest page address</label>
+      <input id="guestUrl" type="url" spellcheck="false" placeholder="https://yoursite.com/share/">
+      <small>Used to build the invite link (<code>?room=CODE</code>).</small>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <g id="i-copy" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></g>
+      <g id="i-link" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></g>
+      <g id="i-bookmark" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11a1 1 0 0 1 1 1v15l-6.5-4.2L5.5 20V5a1 1 0 0 1 1-1z"/></g>
+      <g id="i-tabs" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M3.5 10h17M9 6v4"/></g>
+      <g id="i-video" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2.5"/><path d="M8 21h8M12 17v4"/></g>
+      <g id="i-pointer" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l12.5 6.2-5.3 1.6-1.7 5.4z"/><path d="M13.5 13.5L18 18"/></g>
+      <g id="i-check" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></g>
+    </defs>
+  </svg>
+
+  <script src="popup.js"></script>
+</body>
+</html>

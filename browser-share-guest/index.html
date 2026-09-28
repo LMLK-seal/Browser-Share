@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Browser Share</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233D3DFF'/%3E%3Crect x='5.5' y='6.5' width='16' height='13' rx='2.6' fill='%23fff' opacity='.4'/%3E%3Crect x='10.5' y='12.5' width='16.5' height='13.5' rx='2.6' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preload" href="fonts/bricolage-grotesque-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // set theme before first paint
+    (function () {
+      try {
+        var t = localStorage.getItem('bshare-theme');
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      } catch (e) { document.documentElement.dataset.theme = 'light'; }
+    })();
+  </script>
+</head>
+<body>
+
+<!-- ============ JOIN ============ -->
+<div id="viewJoin" class="screen">
+  <header class="bar">
+    <a class="brand" href="./" aria-label="Browser Share">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#logo"/></svg>
+      <span class="wordmark">Browser Share</span>
+    </a>
+    <button class="iconBtn themeBtn" type="button" aria-label="Switch colour theme"><svg class="ic" viewBox="0 0 24 24"><use href="#i-theme"/></svg></button>
+  </header>
+
+  <main class="joinMain">
+    <section class="joinCopy">
+      <h1>Enter the code your friend gave you</h1>
+      <p class="sub">You'll see whatever they choose to share: their bookmarks, their open tabs, or one tab live, which they can let you use too.</p>
+
+      <form id="joinForm" autocomplete="off" novalidate>
+        <div class="keys" id="keys" role="group" aria-label="Room code, 6 characters">
+          <input type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Character 1">
+          <input type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Character 2">
+          <input type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Character 3">
+          <span class="keyGap" aria-hidden="true"></span>
+          <input type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Character 4">
+          <input type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Character 5">
+          <input type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Character 6">
+        </div>
+        <button class="btn primary big" id="joinBtn" type="submit">Join room</button>
+      </form>
+      <p class="joinStatus" id="joinStatus" role="status" aria-live="polite"></p>
+    </section>
+
+    <aside class="joinArt" aria-hidden="true">
+      <div class="mock">
+        <div class="mockBar">
+          <span class="mockBtns"><i></i><i></i><i></i></span>
+          <span class="mockUrl"><svg class="ic" viewBox="0 0 24 24"><use href="#i-lock"/></svg>their-tab.example.com</span>
+          <span class="mockLive"><i></i>Live</span>
+        </div>
+        <div class="mockStage">
+          <div class="mockPage">
+            <div class="mockHero"></div>
+            <div class="mockLine w80"></div>
+            <div class="mockLine w60"></div>
+            <div class="mockRow"><div class="mockCard"></div><div class="mockCard"></div><div class="mockCard"></div></div>
+          </div>
+          <div class="mockCursor">
+            <svg viewBox="0 0 24 24"><path d="M4 3l15 7.4-6.4 2-2.1 6.6z" fill="currentColor" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <span>You</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="foot">Your browsers connect directly to each other. Nothing you see here is stored on a server.</footer>
+</div>
+
+<!-- ============ SESSION ============ -->
+<div id="viewSession" class="screen" hidden>
+  <header class="bar sessionBar">
+    <a class="brand" href="./" aria-label="Browser Share">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#logo"/></svg>
+      <span class="wordmark">Browser Share</span>
+    </a>
+    <div class="roomChip" title="Room code"><span class="roomLabel">Room</span><b id="roomCode">------</b></div>
+    <div class="conn" id="conn" data-state="connecting"><i></i><span id="connText">Connecting</span></div>
+    <span class="grow"></span>
+    <button class="iconBtn themeBtn" type="button" aria-label="Switch colour theme"><svg class="ic" viewBox="0 0 24 24"><use href="#i-theme"/></svg></button>
+    <button class="btn ghost" id="leaveBtn" type="button">Leave</button>
+  </header>
+
+  <nav class="paneNav" role="tablist" aria-label="Shared content">
+    <button role="tab" id="tabLive" data-pane="live" aria-selected="true"><svg class="ic" viewBox="0 0 24 24"><use href="#i-video"/></svg>Live view</button>
+    <button role="tab" id="tabTabs" data-pane="tabs" aria-selected="false"><svg class="ic" viewBox="0 0 24 24"><use href="#i-tabs"/></svg>Open tabs<span class="count" id="countTabs"></span></button>
+    <button role="tab" id="tabBookmarks" data-pane="bookmarks" aria-selected="false"><svg class="ic" viewBox="0 0 24 24"><use href="#i-bookmark"/></svg>Bookmarks<span class="count" id="countBookmarks"></span></button>
+  </nav>
+
+  <main class="panes">
+    <!-- LIVE -->
+    <section id="paneLive" class="pane" role="tabpanel" aria-labelledby="tabLive">
+      <div class="frame">
+        <div class="frameBar">
+          <div class="frameNav">
+            <button class="iconBtn" id="navBack" type="button" aria-label="Back" title="Back" disabled><svg class="ic" viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+            <button class="iconBtn" id="navForward" type="button" aria-label="Forward" title="Forward" disabled><svg class="ic" viewBox="0 0 24 24"><use href="#i-forward"/></svg></button>
+            <button class="iconBtn" id="navReload" type="button" aria-label="Reload" title="Reload" disabled><svg class="ic" viewBox="0 0 24 24"><use href="#i-reload"/></svg></button>
+          </div>
+          <div class="address" id="address"><svg class="ic" viewBox="0 0 24 24"><use href="#i-globe"/></svg><span id="addressText">Nothing shared yet</span></div>
+          <span class="liveChip" id="liveChip" hidden><i></i>Live</span>
+          <button class="iconBtn" id="soundBtn" type="button" aria-label="Mute" title="Mute" hidden><svg class="ic" viewBox="0 0 24 24"><use id="soundUse" href="#i-sound"/></svg></button>
+          <button class="iconBtn" id="fsBtn" type="button" aria-label="Full screen" title="Full screen"><svg class="ic" viewBox="0 0 24 24"><use href="#i-expand"/></svg></button>
+          <button class="btn control" id="controlBtn" type="button" aria-pressed="false" disabled><svg class="ic" viewBox="0 0 24 24"><use href="#i-pointer"/></svg><span id="controlLabel">Take control</span></button>
+        </div>
+        <div class="stage" id="stage" tabindex="-1">
+          <video id="video" autoplay playsinline></video>
+          <div class="stageEmpty" id="stageEmpty">
+            <svg class="ic big" viewBox="0 0 24 24"><use href="#i-video"/></svg>
+            <h2 id="emptyTitle">Waiting for a live tab</h2>
+            <p id="emptyText">When your friend shares a tab, it appears here.</p>
+          </div>
+          <div class="stageHint" id="stageHint" hidden>Click the video, then type or use your mouse. Your friend sees everything you do.</div>
+          <div class="stageMeta" id="stageMeta" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABS -->
+    <section id="paneTabs" class="pane" role="tabpanel" aria-labelledby="tabTabs" hidden>
+      <div class="toolbar">
+        <label class="search"><svg class="ic" viewBox="0 0 24 24"><use href="#i-search"/></svg><input id="tabsSearch" type="search" placeholder="Search open tabs" autocomplete="off" spellcheck="false"></label>
+      </div>
+      <div class="list" id="tabsList"></div>
+    </section>
+
+    <!-- BOOKMARKS -->
+    <section id="paneBookmarks" class="pane" role="tabpanel" aria-labelledby="tabBookmarks" hidden>
+      <div class="toolbar">
+        <label class="search"><svg class="ic" viewBox="0 0 24 24"><use href="#i-search"/></svg><input id="bmSearch" type="search" placeholder="Search bookmarks" autocomplete="off" spellcheck="false"></label>
+        <div class="toolbarBtns" id="bmTools">
+          <button class="btn ghost small" id="bmExpand" type="button">Expand all</button>
+          <button class="btn ghost small" id="bmCollapse" type="button">Collapse all</button>
+        </div>
+      </div>
+      <div class="list tree" id="bmList"></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="logo">
+      <rect width="32" height="32" rx="8" fill="#3D3DFF"/>
+      <rect x="5.5" y="6.5" width="16" height="13" rx="2.6" fill="#fff" opacity=".38"/>
+      <rect x="10.5" y="12.5" width="16.5" height="13.5" rx="2.6" fill="#fff"/>
+      <rect x="10.5" y="12.5" width="16.5" height="4.4" rx="2.6" fill="#E2E5FF"/>
+      <rect x="10.5" y="14.6" width="16.5" height="2.3" fill="#E2E5FF"/>
+      <circle cx="13.6" cy="14.7" r="1.15" fill="#FF5B4A"/>
+    </g>
+    <g id="i-theme" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" /><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></g>
+    <g id="i-video" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2.5"/><path d="M8 21h8M12 17v4"/></g>
+    <g id="i-tabs" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M3.5 10h17M9 6v4"/></g>
+    <g id="i-bookmark" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11a1 1 0 0 1 1 1v15l-6.5-4.2L5.5 20V5a1 1 0 0 1 1-1z"/></g>
+    <g id="i-back" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></g>
+    <g id="i-forward" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></g>
+    <g id="i-reload" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12a7 7 0 1 1-2.2-5.1"/><path d="M19 4.5v4h-4"/></g>
+    <g id="i-globe" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.8 5.2 3.8 8.5s-1.2 6.1-3.8 8.5c-2.6-2.4-3.8-5.2-3.8-8.5S9.4 5.9 12 3.5z"/></g>
+    <g id="i-lock" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="10.5" width="13" height="9" rx="2.2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></g>
+    <g id="i-expand" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></g>
+    <g id="i-pointer" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l12.5 6.2-5.3 1.6-1.7 5.4z"/><path d="M13.5 13.5L18 18"/></g>
+    <g id="i-search" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></g>
+    <g id="i-folder" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></g>
+    <g id="i-chevron" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></g>
+    <g id="i-pin" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 5 3 3H7l3-3z"/><path d="M12 12v8"/></g>
+    <g id="i-sound" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10v4h3.5L13 18V6L8.5 10z"/><path d="M16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10"/></g>
+    <g id="i-mute" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10v4h3.5L13 18V6L8.5 10z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g>
+    <g id="i-open" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5h6v6M19 5l-8 8"/><path d="M17 14v3.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5 17.5v-9A1.5 1.5 0 0 1 6.5 7H10"/></g>
+    <g id="i-send" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l12.5 6.2-5.3 1.6-1.7 5.4z"/></g>
+  </defs>
+</svg>
+
+<script src="lib/peerjs.min.js"></script>
+<script src="join.js"></script>
+</body>
+</html>
