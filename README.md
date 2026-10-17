@@ -276,4 +276,4 @@ Ideas, not promises:
 
 ## License
 
-Released under the MIT License. Add a `LICENSE` file with your name and year before publishing. Bundled third-party components keep their own licenses (PeerJS: MIT, fonts: SIL OFL 1.1; license texts are in the `fonts/` folders).
+Released under the MIT License.
